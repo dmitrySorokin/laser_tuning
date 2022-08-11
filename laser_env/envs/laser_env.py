@@ -71,10 +71,9 @@ class LaserEnv(gym.Env):
             self._take_action(action_id, action_value)
 
         center, wave_vector = self._calc_center_and_wave_vector()
-        proj, dist, angle = self._calc_projection_distance(center, wave_vector)
+        proj, dist = self._calc_projection_distance(center, wave_vector)
         self.info['proj'] = proj
         self.info['distance'] = dist
-        self.info['angle'] = angle
 
         self.state = self._calc_state(center, wave_vector, proj)
         reward = self._calc_reward(dist)
@@ -97,10 +96,9 @@ class LaserEnv(gym.Env):
             self._take_action(action_id, action_value)
 
         center, wave_vector = self._calc_center_and_wave_vector()
-        proj, dist, angle = self._calc_projection_distance(center, wave_vector)
+        proj, dist = self._calc_projection_distance(center, wave_vector)
         self.info['proj'] = proj
         self.info['distance'] = dist
-        self.info['angle'] = angle
 
         self.state = self._calc_state(center, wave_vector, proj)
         return self.state
@@ -166,7 +164,7 @@ class LaserEnv(gym.Env):
 
         self.info['kvector'] = wave_vector
 
-        # angle = angle_between(wave_vector1, wave_vector2)
+        self.info['angle'] = angle_between(wave_vector, [0, 0, -1])
 
         return center, wave_vector
 
@@ -176,9 +174,8 @@ class LaserEnv(gym.Env):
 
         proj = project(center, wave_vector, projection_plane_normal, projection_plane_center)
         distance = dist(proj, [0, 0, 0])
-        angle = angle_between(proj, [0, 0, -1])
 
-        return proj, distance, angle
+        return proj, distance
 
 
     def game_over(self):
