@@ -2,19 +2,19 @@
 
 <img src="imgs/scheme.jpg" width="700"/>
 
-## install
+## install environment
 ```bash
-pip3 install -e .
+cd laser_env && pip3 install -e .
 ```
 
-## run
+## train
 
 ```python3
-import gym
-import laser_env
+python3 agent/train.py
+```
 
-env = gym.make('laser-v1')
-state = env.reset()
-state, reward, done, info = env.step()
+## evaluate
 
+```python3
+python3 agent/eval.py
 ```

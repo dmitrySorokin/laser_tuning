@@ -1,6 +1,4 @@
 .idea/
 __pycache__/
-env.egg-info
-build
-install
-gym_interf/envs/libs/include/
+*.egg-info
+

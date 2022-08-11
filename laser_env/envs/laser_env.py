@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 import time as tm
-from .utils import reflect, project, rotate_x, dist, angle_between, visibility_for_telescopes
+from .utils import reflect, project, rotate_x, dist, angle_between
 
 
 class LaserEnv(gym.Env):
@@ -50,46 +50,34 @@ class LaserEnv(gym.Env):
         self.state = None
         self.n_steps = None
         self.info = None
-        self.dist = None
-        self.angle = None
         self.max_steps = 100
 
-        self.beam1_rotation = 0
-        self.beam2_rotation = 0
-
-    def get_keys_to_action(self):
-        return {
-            (ord('w'),): 0,
-            (ord('s'),): 1,
-            (ord('a'),): 2,
-            (ord('d'),): 3,
-            (ord('i'),): 4,
-            (ord('k'),): 5,
-            (ord('j'),): 6,
-            (ord('l'),): 7,
-        }
+    def get_info(self):
+        return self.info
 
     def seed(self, seed=None):
         self.action_space.seed(seed)
 
     def step(self, actions):
         """
-        :param action: (mirror_name, axis, delta_angle)
+        :param action: (delta_11, delta_12, delta_21, delta_22)
         :return: (state, reward, done, info)
         """
 
         self.n_steps += 1
+        self.info = {}
 
         for action_id, action_value in enumerate(actions):
             self._take_action(action_id, action_value)
 
         center, wave_vector = self._calc_center_and_wave_vector()
-        proj, self.dist = self._calc_projection_distance(center, wave_vector)
+        proj, dist, angle = self._calc_projection_distance(center, wave_vector)
         self.info['proj'] = proj
-        self.info['dist'] = self.dist
+        self.info['distance'] = dist
+        self.info['angle'] = angle
 
         self.state = self._calc_state(center, wave_vector, proj)
-        reward = self._calc_reward(center, wave_vector, proj)
+        reward = self._calc_reward(dist)
 
         return self.state, reward, self.game_over(), self.info
 
@@ -108,23 +96,19 @@ class LaserEnv(gym.Env):
         for action_id, action_value in enumerate(actions):
             self._take_action(action_id, action_value)
 
-        c1, k1 = self._calc_center_and_wave_vector()
-        proj_1, self.dist = self._calc_projection_distance(c1, k1)
-        self.state = self._calc_state(c1, k1, proj_1)
+        center, wave_vector = self._calc_center_and_wave_vector()
+        proj, dist, angle = self._calc_projection_distance(center, wave_vector)
+        self.info['proj'] = proj
+        self.info['distance'] = dist
+        self.info['angle'] = angle
+
+        self.state = self._calc_state(center, wave_vector, proj)
         return self.state
 
     def render(self, mode='human', close=False):
         assert False, 'not implemented'
 
     def _take_action(self, action, normalized_step_length):
-        """
-        0 - do nothing
-        [1, 2, 3, 4] - mirror1
-        [5, 6, 7, 8] - mirror2
-        :param action:
-        :return:
-        """
-
         if action == 0:
             self.mirror1_screw_x = np.clip(self.mirror1_screw_x + normalized_step_length, -1, 1)
         elif action == 1:
@@ -192,15 +176,16 @@ class LaserEnv(gym.Env):
 
         proj = project(center, wave_vector, projection_plane_normal, projection_plane_center)
         distance = dist(proj, [0, 0, 0])
+        angle = angle_between(proj, [0, 0, -1])
 
-        return proj, distance
+        return proj, distance, angle
 
 
     def game_over(self):
         return self.n_steps >= self.max_steps
 
     def _calc_state(self, center1, wave_vector1, proj_1):
-        return proj_1
+        return proj_1[:2]
 
-    def _calc_reward(self, center1, wave_vector1, proj_1):
-        return -1
+    def _calc_reward(self, dist):
+        return -dist
